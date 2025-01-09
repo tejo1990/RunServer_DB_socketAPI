@@ -121,6 +121,30 @@ namespace RunServer
     {
         try
         {
+            // ID가 존재하는지 확인
+            if (userData.ContainsKey("id"))
+            {
+                var existingData = GetItemById(tableName, userData["id"].ToString());
+                
+                if (existingData != null)
+                {
+                    // UPDATE 쿼리 생성
+                    string updates = string.Join(", ", userData.Keys.Select(k => $"{k} = @{k}"));
+                    string uquery = $"UPDATE {tableName} SET {updates} WHERE ID = @ID";
+
+                    using (MySqlCommand cmd = new MySqlCommand(uquery, _connection))
+                    {
+                        foreach (var item in userData)
+                        {
+                            cmd.Parameters.AddWithValue("@" + item.Key, item.Value);
+                        }
+                        int result = cmd.ExecuteNonQuery();
+                        return result > 0;
+                    }
+                }
+            }
+            
+            // INSERT 쿼리 실행 (기존 코드)
             string columns = string.Join(", ", userData.Keys);
             string values = string.Join(", ", userData.Keys.Select(k => "@" + k));
             string query = $"INSERT INTO {tableName} ({columns}) VALUES ({values})";
